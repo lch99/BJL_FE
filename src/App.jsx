@@ -1,65 +1,70 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
-import POS from './pages/POS';
+import POSPage from './pages/POS';
 
-function App() {
+const AppRoutes = () => {
+    const navigate = useNavigate();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
 
-    // Check if user is already logged in (on page load)
+    // Load auth state from localStorage on app start
     useEffect(() => {
-        const checkAuth = () => {
-            const authStatus = localStorage.getItem('isAuthenticated');
-            const savedUser = localStorage.getItem('username');
-
-            if (authStatus === 'true' && savedUser) {
-                setIsAuthenticated(true);
-                setUser({ username: savedUser });
-            }
-            setLoading(false);
-        };
-
-        checkAuth();
+        const auth = localStorage.getItem('isAuthenticated');
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        if (auth === 'true' && storedUser) {
+            setIsAuthenticated(true);
+            setUser(storedUser);
+        }
     }, []);
 
-    // Handle login
-    const handleLogin = (userData) => {
+    // Redirect to /pos if authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/pos', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
+
+    const handleLogin = (userData, token) => {
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (token) localStorage.setItem('token', token);
         setIsAuthenticated(true);
         setUser(userData);
     };
 
-    // Handle logout
     const handleLogout = () => {
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('username');
+        localStorage.clear();
         setIsAuthenticated(false);
         setUser(null);
+        navigate('/login', { replace: true });
     };
 
-    // Show loading spinner while checking authentication
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading...</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="App">
-            {isAuthenticated ? (
-                <POS user={user} onLogout={handleLogout} />
-            ) : (
-                <Login onLogin={handleLogin} />
-            )}
-        </div>
+        <Routes>
+            <Route
+                path="/login"
+                element={
+                    isAuthenticated ? <Navigate to="/pos" replace /> : <Login onLogin={handleLogin} />
+                }
+            />
+            <Route
+                path="/pos"
+                element={
+                    isAuthenticated ? <POSPage user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />
+                }
+            />
+            <Route path="*" element={<Navigate to={isAuthenticated ? '/pos' : '/login'} replace />} />
+        </Routes>
     );
-}
+};
+
+const App = () => {
+    return (
+        <Router>
+            <AppRoutes />
+        </Router>
+    );
+};
 
 export default App;

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Search, List, Grid3x3, Package } from 'lucide-react';
 import BrandCategoryView from './BrandCategoryView';
-import ProductCard from './ProductCard';
+import ProductCard from './Products/ProductCard';
 import Cart from './Cart';
 
 const POSView = ({

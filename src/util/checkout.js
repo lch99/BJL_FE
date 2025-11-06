@@ -1,9 +1,13 @@
+// ========================= 💳 PAYMENT HANDLERS ========================= //
+
+// Trigger payment modal with pre-filled total
 export const initiatePayment = (cart, calculateTotal, setShowPaymentModal, setReceivedAmount) => {
-    if (cart.length === 0) return;
+    if (!cart?.length) return;
     setShowPaymentModal(true);
     setReceivedAmount(calculateTotal().toFixed(2));
 };
 
+// Complete the sale process
 export const completeSale = ({
                                  cart,
                                  products,
@@ -23,6 +27,11 @@ export const completeSale = ({
                                  setShowPaymentModal,
                                  setShowReceiptModal
                              }) => {
+    if (!cart?.length) {
+        alert('No items in cart.');
+        return;
+    }
+
     const total = calculateTotal();
     const received = parseFloat(receivedAmount) || 0;
 
@@ -31,28 +40,28 @@ export const completeSale = ({
         return;
     }
 
+    // Generate transaction record
     const transaction = {
         id: `TXN-${Date.now()}`,
         date: new Date().toISOString(),
-        customer: customerName || 'Walk-in Customer',
-        phone: customerPhone || 'N/A',
+        customer: customerName?.trim() || 'Walk-in Customer',
+        phone: customerPhone?.trim() || 'N/A',
         items: cart.map(item => ({ ...item })),
         subtotal: calculateSubtotal(),
         discount: calculateDiscount(),
-        total: total,
+        total,
         profit: calculateProfit(),
-        paymentMethod: paymentMethod,
+        paymentMethod,
         receivedAmount: received,
-        change: received - total
+        change: parseFloat((received - total).toFixed(2)),
     };
 
-    // Update products stock
+    // Adjust product stock
     const updatedProducts = products.map(p => {
         const cartItem = cart.find(c => c.id === p.id);
-        if (cartItem) {
-            return { ...p, stock: p.stock - cartItem.quantity };
-        }
-        return p;
+        return cartItem
+            ? { ...p, stock: Math.max(0, p.stock - cartItem.quantity) }
+            : p;
     });
 
     // Update state
