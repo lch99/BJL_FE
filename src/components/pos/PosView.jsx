@@ -2,7 +2,7 @@
 import React from 'react';
 import { Search, List, Grid3x3, Package } from 'lucide-react';
 import BrandCategoryView from './BrandCategoryView';
-import ProductCard from './Products/ProductCard';
+import ProductCard from './ProductCard';
 import Cart from './Cart';
 
 const POSView = ({
@@ -13,9 +13,9 @@ const POSView = ({
                      updateQuantity,
                      removeFromCart,
                      clearCart,
-                     calculateSubtotal,
-                     calculateDiscount,
-                     calculateTotal,
+                     subtotal,
+                     discountValue,
+                     total,
                      initiatePayment,
                      customerName,
                      setCustomerName,
@@ -148,9 +148,9 @@ const POSView = ({
                 updateQuantity={updateQuantity}
                 removeFromCart={removeFromCart}
                 clearCart={clearCart}
-                calculateSubtotal={calculateSubtotal}
-                calculateDiscount={calculateDiscount}
-                calculateTotal={calculateTotal}
+                calculateSubtotal={subtotal}
+                calculateDiscount={discountValue}
+                calculateTotal={total}
                 initiatePayment={initiatePayment}
             />
         </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Phone, Package, Wrench } from 'lucide-react';
-import ProductCard from './Products/ProductCard';
+import ProductCard from './ProductCard';
 import { getProductsByBrand, getAccessoriesBySubcategory } from '../../util/calculations';
 
 const BrandCategoryView = ({ products = [], repairs = [], selectedCategory, searchTerm = '', onAddToCart }) => {

@@ -97,6 +97,14 @@ export const fetchTransactions = async (startDate = null, endDate = null) => {
 };
 export const fetchSaleById = id => apiClient(`/sales/${id}`);
 
+export const refreshInventory = async () => {
+    const [phones, accessories] = await Promise.all([
+        fetchPhones(),
+        fetchAccessories(),
+    ]);
+    return { phones, accessories };
+};
+
 // ==================== WORKERS ====================
 export const fetchWorkers = () => apiClient('/workers');
 export const createWorker = d => apiClient('/workers', { method: 'POST', body: JSON.stringify(d) });

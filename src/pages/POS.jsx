@@ -1,330 +1,147 @@
-// src/pages/POS.jsx
 import React, { useState, useEffect } from "react";
-import {
-    ShoppingCart,
-    Package,
-    BarChart3,
-    Wrench,
-    Truck,
-    ClipboardList,
-} from "lucide-react";
+import Header from "../components/layout/Header";
+import ProductTabs from "../components/pos/ProductTabs";
+import ProductGrid from "../components/pos/ProductGrid";
+import Cart from "../components/pos/Cart";
+import { useToast } from "../components/layout/FeedbackToast";
+import { fetchPhones, fetchAccessories } from "../util/posApi";
 
-// Components
-import Header from "../components/pos/Header";
-import POSView from "../components/pos/PosView";
-import InventoryView from "../components/pos/InventoryView";
-import ReportsView from "../components/pos/ReportsView";
-import RepairsView from "../components/pos/RepairsView";
-import PaymentModal from "../components/pos/PaymentModal";
-import ReceiptModal from "../components/pos/ReceiptModal";
-
-// Newly added modules
-import Supplier from "../components/pos/Supplier/SupplierView";
-import Purchase from "../components/pos/Purchase/PurchaseView";
-
-// Utilities
-import {
-    calculateSubtotal,
-    calculateDiscount,
-    calculateTotal,
-    calculateProfit,
-    getTodaySales,
-    getTodayProfit,
-    filterProducts,
-} from "../util/calculations";
-import { fetchProducts, createSale, fetchTransactions } from "../util/posApi";
-
-const POS = ({ user, onLogout }) => {
-    const [showUserManagement, setShowUserManagement] = useState(false);
-    const [activeTab, setActiveTab] = useState("pos");
-    const [products, setProducts] = useState([]);
-    const [transactions, setTransactions] = useState([]);
-    const [cart, setCart] = useState([]);
-
-    // Customer + Discount
-    const [customerName, setCustomerName] = useState("");
-    const [customerPhone, setCustomerPhone] = useState("");
-    const [discount, setDiscount] = useState(0);
-    const [discountType, setDiscountType] = useState("fixed");
-
-    // Modals
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [showReceiptModal, setShowReceiptModal] = useState(false);
-
-    // Payment
-    const [paymentMethod, setPaymentMethod] = useState("cash");
-    const [receivedAmount, setReceivedAmount] = useState("");
-    const [lastReceipt, setLastReceipt] = useState(null);
-
-    // Misc
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+const POS = ({ user, pos }) => {
+    const [activeTab, setActiveTab] = useState("phones");
+    const [phones, setPhones] = useState([]);
+    const [accessories, setAccessories] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All");
-    const [viewMode, setViewMode] = useState("brands");
+    const [cart, setCart] = useState([]);
+    const { showToast } = useToast();
 
-    // ===== Fetch data =====
-    useEffect(() => {
-        loadProducts();
-        loadTransactions();
-    }, []);
-
+    // Load products
     const loadProducts = async () => {
         try {
-            setLoading(true);
-            setError(null);
-            const data = await fetchProducts();
-            setProducts(data);
+            const [p, a] = await Promise.all([fetchPhones(), fetchAccessories()]);
+            setPhones(p || []);
+            setAccessories(a || []);
         } catch (err) {
-            console.error("Error loading products:", err);
-            setError("Failed to load products. Please try again.");
-        } finally {
-            setLoading(false);
+            console.error("Failed to load products:", err);
+            showToast({ type: "error", message: "Failed to load products" });
         }
     };
 
-    const dailySales = getTodaySales(transactions);
-    const dailyProfit = getTodayProfit(transactions);
+    useEffect(() => {
+        loadProducts();
+    }, []);
 
-    const loadTransactions = async () => {
-        try {
-            const data = await fetchTransactions();
-            setTransactions(data);
-        } catch (err) {
-            console.error("Error loading transactions:", err);
-        }
-    };
+    const products = activeTab === "phones" ? phones : accessories;
 
-    // ===== Cart logic =====
-    const addToCart = (product) => {
-        const stock = product.quantity || product.stock;
-        if (stock === 0) return alert("Out of stock!");
-
-        const existing = cart.find((i) => i.id === product.id);
-        if (existing) {
-            if (existing.quantity < stock) {
-                setCart(
-                    cart.map((i) =>
-                        i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
-                    )
-                );
-            } else alert("Stock limit reached!");
-        } else {
-            setCart([...cart, { ...product, quantity: 1 }]);
-        }
-    };
-
-    const updateQuantity = (id, qty) => {
-        const product = products.find((p) => p.id === id);
-        if (!product) return;
-        const stock = product.quantity || product.stock;
-        if (qty <= 0) removeFromCart(id);
-        else if (qty <= stock)
-            setCart(cart.map((i) => (i.id === id ? { ...i, quantity: qty } : i)));
-        else alert(`Only ${stock} items available!`);
-    };
-
-    const removeFromCart = (id) => setCart(cart.filter((i) => i.id !== id));
-    const clearCart = () => {
-        setCart([]);
-        setDiscount(0);
-        setCustomerName("");
-        setCustomerPhone("");
-    };
-
-    // ===== Calculations =====
-    const subtotal = () => calculateSubtotal(cart);
-    const discountValue = () => calculateDiscount(cart, discount, discountType);
-    const total = () => calculateTotal(cart, discount, discountType);
-    const profit = () => calculateProfit(cart, discount, discountType);
-
-    // ===== Sale logic =====
-    const initiatePayment = () => {
-        if (cart.length === 0) return alert("Cart is empty!");
-        setShowPaymentModal(true);
-        setReceivedAmount(total().toFixed(2));
-    };
-
-    const completeSale = async () => {
-        const totalAmt = total();
-        const received = parseFloat(receivedAmount) || 0;
-        if (received < totalAmt) return alert("Received amount is less than total!");
-
-        const items = cart.map((i) => ({
-            id: parseInt(String(i.id).replace(/\D/g, ""), 10),
-            type: i.category === "Phones" ? "phone" : "accessory",
-            quantity: i.quantity,
-            price: parseFloat(i.sell_price || i.price),
-        }));
-
-        const saleData = {
-            worker_id: user?.id || null,
-            items,
-            total_amount: totalAmt,
-            payment_method: paymentMethod,
-            paid_amount: received,
-        };
-
-        try {
-            setLoading(true);
-            const result = await createSale(saleData);
-            const newTxn = {
-                id: result.id || `TXN-${Date.now()}`,
-                date: new Date().toISOString(),
-                customer: customerName || "Walk-in Customer",
-                phone: customerPhone || "N/A",
-                items: cart,
-                subtotal: subtotal(),
-                discount: discountValue(),
-                total: totalAmt,
-                profit: profit(),
-                paymentMethod,
-                receivedAmount: received,
-                change: received - totalAmt,
+    // Normalize product to cart item
+    const normalizeProductToCartItem = (p, category) => {
+        if (category === "phones") {
+            const model = p.model_info || {};
+            const name = `${model.model_name || "Phone"}${p.color ? ` (${p.color})` : ""}`.trim();
+            return {
+                itemId: model.id,       // numeric model_id
+                sourceId: p.id,         // variant ID (optional)
+                category: "Phones",
+                brand: model.brand || "Unknown",
+                name,
+                price: Number(p.sell_price || p.price || 0),
+                cost: Number(p.purchase_price || p.cost || 0) || 0,
+                stock: p.quantity ?? 0,
+                raw: p,
+                quantity: 1,
             };
-            // Update stock
-            setProducts(
-                products.map((p) => {
-                    const item = cart.find((c) => c.id === p.id);
-                    if (item) {
-                        const stock = p.quantity || p.stock;
-                        return { ...p, stock: stock - item.quantity, quantity: stock - item.quantity };
-                    }
-                    return p;
-                })
-            );
-
-            setTransactions([newTxn, ...transactions]);
-            setLastReceipt(newTxn);
-            clearCart();
-            setShowPaymentModal(false);
-            setShowReceiptModal(true);
-        } catch (err) {
-            console.error("❌ Error completing sale:", err);
-            alert("Failed to complete sale. Please try again.");
-        } finally {
-            setLoading(false);
         }
+
+        // Accessories
+        return {
+            itemId: p.id,             // numeric ID
+            sourceId: p.id,
+            category: "Accessories",
+            brand: p.brand || "Unknown",
+            name: p.name || p.sku || "Accessory",
+            price: Number(p.sell_price || p.price || 0),
+            cost: Number(p.purchase_price || p.cost || 0) || 0,
+            stock: p.quantity ?? p.stock ?? 0,
+            raw: p,
+            quantity: 1,
+        };
     };
 
-    const filteredProducts = filterProducts(products, searchTerm, selectedCategory);
+// Add to cart
+    const addToCart = (rawProduct) => {
+        const category = activeTab === "phones" ? "phones" : "accessories";
+        const normalized = normalizeProductToCartItem(rawProduct, category);
 
-    // ===== Daily Summary =====
-    const todaySales = getTodaySales(transactions);
-    const todayProfit = getTodayProfit(transactions);
+        setCart((prev) => {
+            const existing = prev.find(
+                (i) => i.itemId === normalized.itemId && i.category === normalized.category
+            );
+            if (existing) {
+                return prev.map((i) =>
+                    i.itemId === normalized.itemId ? { ...i, quantity: i.quantity + 1 } : i
+                );
+            }
+            return [...prev, normalized];
+        });
+    };
 
-    // ===== Render =====
+    const updateQuantity = (itemId, qty) => {
+        setCart((prev) =>
+            prev
+                .map((c) => (c.itemId === itemId ? { ...c, quantity: Math.max(0, qty) } : c))
+                .filter((c) => c.quantity > 0)
+        );
+    };
+
+    const removeFromCart = (itemId) =>
+        setCart((prev) => prev.filter((c) => c.itemId !== itemId));
+    const clearCart = () => setCart([]);
+
+    const subtotal = () =>
+        cart.reduce((s, i) => s + (i.price || 0) * (i.quantity || 0), 0);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 text-gray-800">
-            <Header
-                user={user}
-                todaySales={dailySales}
-                todayProfit={dailyProfit}
-                onLogout={onLogout}
-                onUserManage={() => setShowUserManagement(true)}
-            />
+            <Header title="Point of Sale" />
 
-            <div className="container mx-auto px-4 py-6">
-                {/* Tabs */}
-                <div className="flex gap-3 mb-6 flex-wrap">
-                    {[
-                        { id: "pos", icon: ShoppingCart, label: "Point of Sale" },
-                        { id: "inventory", icon: Package, label: "Inventory" },
-                        { id: "repairs", icon: Wrench, label: "Repairs" },
-                        { id: "supplier", icon: Truck, label: "Suppliers" },
-                        { id: "purchase", icon: ClipboardList, label: "Purchases" },
-                        { id: "reports", icon: BarChart3, label: "Reports" },
-                    ].map((tab) => {
-                        const Icon = tab.icon;
-                        const active = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                                    active
-                                        ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg scale-105"
-                                        : "bg-white text-amber-800 hover:bg-amber-100 border border-amber-200"
-                                }`}
-                            >
-                                <Icon className="w-5 h-5" />
-                                {tab.label}
-                            </button>
-                        );
-                    })}
+            <div className="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* LEFT: product selection */}
+                <div className="lg:col-span-8 bg-white/80 backdrop-blur-md border border-amber-100 rounded-2xl p-4 overflow-hidden">
+                    <div className="mb-3 flex items-center gap-3">
+                        <ProductTabs
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
+                        />
+                        <input
+                            className="ml-auto border border-amber-200 rounded-lg px-3 py-2 w-64 focus:ring-1 focus:ring-orange-300"
+                            placeholder="Search products (name / model / sku)..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <ProductGrid
+                        products={products}
+                        activeTab={activeTab}
+                        searchTerm={searchTerm}
+                        onAddToCart={addToCart}
+                        onAdd={addToCart}
+                    />
                 </div>
 
-                {/* Tab Views */}
-                {activeTab === "pos" && (
-                    <POSView
-                        products={products}
-                        filteredProducts={filteredProducts}
+                {/* RIGHT: cart */}
+                <div className="lg:col-span-4">
+                    <Cart
                         cart={cart}
-                        addToCart={addToCart}
                         updateQuantity={updateQuantity}
                         removeFromCart={removeFromCart}
                         clearCart={clearCart}
-                        calculateSubtotal={subtotal}
-                        calculateDiscount={discountValue}
-                        calculateTotal={total}
-                        initiatePayment={initiatePayment}
-                        customerName={customerName}
-                        setCustomerName={setCustomerName}
-                        customerPhone={customerPhone}
-                        setCustomerPhone={setCustomerPhone}
-                        discount={discount}
-                        setDiscount={setDiscount}
-                        discountType={discountType}
-                        setDiscountType={setDiscountType}
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        selectedCategory={selectedCategory}
-                        setSelectedCategory={setSelectedCategory}
-                        viewMode={viewMode}
-                        setViewMode={setViewMode}
-                        loading={loading}
-                        error={error}
-                        onReload={loadProducts}
+                        subtotal={subtotal}
+                        currentUserId={user?.id ?? 1}
+                        showDialog={(cfg) => showToast({ ...cfg })}
+                        reloadProducts={loadProducts}
                     />
-                )}
-
-                {activeTab === "inventory" && (
-                    <InventoryView products={products} setProducts={setProducts} onReload={loadProducts} />
-                )}
-
-                {activeTab === "repairs" && <RepairsView />}
-
-                {activeTab === "supplier" && <Supplier />}
-
-                {activeTab === "purchase" && <Purchase />}
-
-                {activeTab === "reports" && (
-                    <ReportsView
-                        transactions={transactions}
-                        setLastReceipt={setLastReceipt}
-                        setShowReceiptModal={setShowReceiptModal}
-                    />
-                )}
+                </div>
             </div>
-
-            {/* Modals */}
-            <PaymentModal
-                show={showPaymentModal}
-                onClose={() => setShowPaymentModal(false)}
-                total={total()}
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
-                receivedAmount={receivedAmount}
-                setReceivedAmount={setReceivedAmount}
-                onComplete={completeSale}
-                loading={loading}
-            />
-
-            <ReceiptModal
-                show={showReceiptModal}
-                onClose={() => setShowReceiptModal(false)}
-                receipt={lastReceipt}
-            />
         </div>
     );
 };

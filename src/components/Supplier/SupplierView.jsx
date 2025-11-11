@@ -5,7 +5,7 @@ import {
     createSupplier,
     updateSupplier,
     deleteSupplier
-} from '../../../util/posApi';
+} from '../../util/posApi';
 
 const SupplierView = () => {
     const [suppliers, setSuppliers] = useState([]);

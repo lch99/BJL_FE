@@ -7,7 +7,7 @@ import {
     voidPurchase,
     fetchSuppliers,
     fetchProducts
-} from '../../../util/posApi';
+} from '../../util/posApi';
 
 const emptyItem = () => ({ product_type: 'phone', product_id: '', quantity: 1, unit_cost: 0, subtotal: 0 });
 
