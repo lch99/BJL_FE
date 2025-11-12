@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import DashboardPage from './pages/DashboardPage';
 import POS from './pages/POS';
+import InventoryView from "./pages/InventoryView";
 import { usePOS } from './hooks/usePOS';
 import { ToastProvider } from './components/layout/FeedbackToast';
 
@@ -68,6 +69,16 @@ const AppWithToast = () => {
                     element={
                         isAuthenticated ? (
                             <POS user={user} pos={pos} />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+                <Route
+                    path="/inventory"
+                    element={
+                        isAuthenticated ? (
+                            <InventoryView user={user} pos={pos} />
                         ) : (
                             <Navigate to="/login" replace />
                         )
