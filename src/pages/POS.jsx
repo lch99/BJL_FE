@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import Header from "../components/layout/Header";
+import Header from "../components/common/Header";
 import ProductTabs from "../components/pos/ProductTabs";
 import ProductGrid from "../components/pos/ProductGrid";
 import Cart from "../components/pos/Cart";
-import { useToast } from "../components/layout/FeedbackToast";
+import { useToast } from "../components/common/FeedbackToast";
 import { fetchPhones, fetchAccessories } from "../util/posApi";
 
 const POS = ({ user, pos }) => {
@@ -32,14 +32,13 @@ const POS = ({ user, pos }) => {
 
     const products = activeTab === "phones" ? phones : accessories;
 
-    // Normalize product to cart item
     const normalizeProductToCartItem = (p, category) => {
         if (category === "phones") {
             const model = p.model_info || {};
             const name = `${model.model_name || "Phone"}${p.color ? ` (${p.color})` : ""}`.trim();
             return {
-                itemId: model.id,       // numeric model_id
-                sourceId: p.id,         // variant ID (optional)
+                itemId: model.id,
+                sourceId: p.id,
                 category: "Phones",
                 brand: model.brand || "Unknown",
                 name,
@@ -50,10 +49,8 @@ const POS = ({ user, pos }) => {
                 quantity: 1,
             };
         }
-
-        // Accessories
         return {
-            itemId: p.id,             // numeric ID
+            itemId: p.id,
             sourceId: p.id,
             category: "Accessories",
             brand: p.brand || "Unknown",
@@ -66,7 +63,6 @@ const POS = ({ user, pos }) => {
         };
     };
 
-// Add to cart
     const addToCart = (rawProduct) => {
         const category = activeTab === "phones" ? "phones" : "accessories";
         const normalized = normalizeProductToCartItem(rawProduct, category);
@@ -100,20 +96,17 @@ const POS = ({ user, pos }) => {
         cart.reduce((s, i) => s + (i.price || 0) * (i.quantity || 0), 0);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 text-gray-800">
-            <Header title="Point of Sale" />
+        <div className="min-h-screen bg-theme-bg text-theme-text">
+            <Header user={user} todaySales={0} todayProfit={0} />
 
-            <div className="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* LEFT: product selection */}
-                <div className="lg:col-span-8 bg-white/80 backdrop-blur-md border border-amber-100 rounded-2xl p-4 overflow-hidden">
-                    <div className="mb-3 flex items-center gap-3">
-                        <ProductTabs
-                            activeTab={activeTab}
-                            setActiveTab={setActiveTab}
-                        />
+            <div className="pt-28 px-6 container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* LEFT: Product Selection */}
+                <div className="lg:col-span-8 bg-theme-card/80 backdrop-blur-md border border-theme-border rounded-2xl p-4 overflow-hidden shadow-lg">
+                    <div className="mb-4 flex items-center gap-3">
+                        <ProductTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                         <input
-                            className="ml-auto border border-amber-200 rounded-lg px-3 py-2 w-64 focus:ring-1 focus:ring-orange-300"
-                            placeholder="Search products (name / model / sku)..."
+                            className="ml-auto border border-theme-border rounded-lg px-3 py-2 w-64 text-theme-text focus:ring-1 focus:ring-theme-accent bg-theme-card"
+                            placeholder="Search products (name / model / SKU)..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -128,8 +121,8 @@ const POS = ({ user, pos }) => {
                     />
                 </div>
 
-                {/* RIGHT: cart */}
-                <div className="lg:col-span-4">
+                {/* RIGHT: Cart */}
+                <div className="lg:col-span-4 bg-theme-card/80 backdrop-blur-md border border-theme-border rounded-2xl p-4 shadow-lg">
                     <Cart
                         cart={cart}
                         updateQuantity={updateQuantity}

@@ -1,103 +1,100 @@
-import React from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import DataTable from "../common/DataTable/DataTable";
+import { Pencil, Trash } from "lucide-react";
 
-export default function InventoryTable({ items, onEdit, onDelete, type }) {
+export default function InventoryTable({ type, items, onEdit, onDelete }) {
+    const [search, setSearch] = useState("");
+    const [sortKey, setSortKey] = useState("id");
+    const [sortOrder, setSortOrder] = useState("asc");
+    const [page, setPage] = useState(1);
 
-    const formatPrice = (val) => `RM ${parseFloat(val).toLocaleString('en-MY', { minimumFractionDigits: 2 })}`;
+    const totalPages = 1; // your API handles real pagination later
 
-    const getStockBadge = (stock) => {
-        if (stock <= 5) return <span className="px-2 py-1 text-xs font-semibold bg-red-500 text-white rounded-full">Low</span>;
-        if (stock <= 20) return <span className="px-2 py-1 text-xs font-semibold bg-yellow-400 text-white rounded-full">Medium</span>;
-        return <span className="px-2 py-1 text-xs font-semibold bg-green-500 text-white rounded-full">High</span>;
-    };
+    // 🔍 FILTER
+    const filtered = useMemo(() => {
+        if (!search) return items;
 
-    const getConditionBadge = (condition) => {
-        if (!condition) return null;
-        const colorMap = { new: "bg-green-500", used: "bg-gray-500", refurbished: "bg-yellow-500" };
-        return (
-            <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${colorMap[condition.toLowerCase()] || "bg-gray-500"}`}>
-        {condition.charAt(0).toUpperCase() + condition.slice(1)}
-      </span>
+        return items.filter((i) =>
+            JSON.stringify(i).toLowerCase().includes(search.toLowerCase())
         );
+    }, [items, search]);
+
+    // 🔽 SORT
+    const sorted = useMemo(() => {
+        return [...filtered].sort((a, b) => {
+            const x = a[sortKey];
+            const y = b[sortKey];
+
+            if (x < y) return sortOrder === "asc" ? -1 : 1;
+            if (x > y) return sortOrder === "asc" ? 1 : -1;
+            return 0;
+        });
+    }, [filtered, sortKey, sortOrder]);
+
+    // 🧱 DEFINE COLUMNS FOR PHONES OR ACCESSORIES
+    const columns = useMemo(() => {
+        if (type === "phones") {
+            return [
+                { key: "id", label: "ID", sortable: true },
+                { key: "model", label: "Model", sortable: true },
+                {
+                    key: "variants",
+                    label: "Variants",
+                    sortable: false,
+                    render: (row) => row.variants?.length || 0
+                }
+            ];
+        }
+
+        // accessories
+        return [
+            { key: "id", label: "ID", sortable: true },
+            { key: "name", label: "Name", sortable: true },
+            { key: "brand", label: "Brand", sortable: true },
+            { key: "sku", label: "SKU", sortable: true },
+            { key: "quantity", label: "Stock", sortable: true }
+        ];
+    }, [type]);
+
+    // 🔧 HANDLE SORT CLICK
+    const handleSort = (key) => {
+        if (!columns.find((c) => c.key === key)?.sortable) return;
+
+        if (sortKey === key) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        } else {
+            setSortKey(key);
+            setSortOrder("asc");
+        }
     };
 
     return (
-        <div className="overflow-x-auto bg-white rounded-xl shadow border border-orange-200">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-orange-100 text-orange-800 uppercase text-sm font-semibold">
-                <tr>
-                    <th className="px-4 py-3">#</th>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Brand</th>
-                    <th className="px-4 py-3">SKU</th>
+        <DataTable
+            columns={columns}
+            data={sorted}
 
-                    {type === "phones" && (
-                        <>
-                            <th className="px-4 py-3">Color</th>
-                            <th className="px-4 py-3">RAM</th>
-                            <th className="px-4 py-3">Storage</th>
-                            <th className="px-4 py-3">Condition</th>
-                            <th className="px-4 py-3">Warranty</th>
-                        </>
-                    )}
+            enableSearch={true}
+            search={search}
+            onSearch={setSearch}
 
-                    {type === "accessories" && (
-                        <th className="px-4 py-3">Subcategory</th>
-                    )}
+            sortKey={sortKey}
+            sortOrder={sortOrder}
+            onSort={handleSort}
 
-                    <th className="px-4 py-3">Stock</th>
-                    <th className="px-4 py-3">Price</th>
-                    <th className="px-4 py-3">Cost</th>
-                    <th className="px-4 py-3">Actions</th>
-                </tr>
-                </thead>
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
 
-                <tbody className="divide-y divide-gray-100 text-sm">
-                {items.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-orange-50 transition">
-                        <td className="px-4 py-2">{idx + 1}</td>
-                        <td className="px-4 py-2 font-medium">{item.name}</td>
-                        <td className="px-4 py-2">{item.brand || '-'}</td>
-                        <td className="px-4 py-2">{item.sku || '-'}</td>
-
-                        {type === "phones" && (
-                            <>
-                                <td className="px-4 py-2">{item.color || '-'}</td>
-                                <td className="px-4 py-2">{item.ram ? `${item.ram}GB` : '-'}</td>
-                                <td className="px-4 py-2">{item.storage ? `${item.storage}GB` : '-'}</td>
-                                <td className="px-4 py-2">{getConditionBadge(item.condition)}</td>
-                                <td className="px-4 py-2">{item.warranty_months ? `${item.warranty_months} months` : '-'}</td>
-                            </>
-                        )}
-
-                        {type === "accessories" && (
-                            <td className="px-4 py-2">{item.subcategory || '-'}</td>
-                        )}
-
-                        <td className="px-4 py-2">{getStockBadge(item.stock)}</td>
-                        <td className="px-4 py-2">{formatPrice(item.price)}</td>
-                        <td className="px-4 py-2">{formatPrice(item.cost)}</td>
-
-                        <td className="px-4 py-2 flex gap-2">
-                            <button
-                                onClick={() => onEdit(item)}
-                                className="flex items-center justify-center px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
-                                title="Edit Item"
-                            >
-                                <Pencil size={16} />
-                            </button>
-                            <button
-                                onClick={() => onDelete(item)}
-                                className="flex items-center justify-center px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                                title="Delete Item"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
+            actions={(row) => (
+                <div className="flex justify-center gap-2">
+                    <button onClick={() => onEdit(row)} className="text-blue-600">
+                        <Pencil size={18} />
+                    </button>
+                    <button onClick={() => onDelete(row)} className="text-red-600">
+                        <Trash size={18} />
+                    </button>
+                </div>
+            )}
+        />
     );
 }

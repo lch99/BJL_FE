@@ -75,13 +75,24 @@ export const fetchProducts = async () => {
 // ==================== REPAIRS ====================
 export const fetchRepairs = async (filters = {}) => {
     const params = new URLSearchParams();
-
     if (filters.status && filters.status !== 'all') params.append('status', filters.status);
     if (filters.start_date) params.append('start_date', filters.start_date);
     if (filters.end_date) params.append('end_date', filters.end_date);
-
     const query = params.toString() ? `?${params.toString()}` : '';
-    return await apiClient(`/repairs${query}`);
+
+    const data = await apiClient(`/repairs${query}`);
+
+    if (!Array.isArray(data)) {
+        console.error('Expected array but got:', data);
+        return [];
+    }
+
+    // Map or normalize data if needed
+    return data.map(r => ({
+        ...r,
+        id: `repair-${r.id}`, // optional, if you want unique id prefix
+        repair_cost: parseFloat(r.repair_cost || 0),
+    }));
 };
 
 export const createRepair = d => apiClient('/repairs', { method: 'POST', body: JSON.stringify(d) });

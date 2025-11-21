@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import "./styles/global.css";
 import Login from './pages/Login';
 import DashboardPage from './pages/DashboardPage';
 import POS from './pages/POS';
 import InventoryView from "./pages/InventoryView";
 import { usePOS } from './hooks/usePOS';
-import { ToastProvider } from './components/layout/FeedbackToast';
+import { ToastProvider } from './components/common/FeedbackToast';
+import RepairsPage from './pages/RepairView';
 
 /**
  * Root wrapper to mount FeedbackToast globally
@@ -33,12 +35,6 @@ const AppWithToast = () => {
         if (token) localStorage.setItem('token', token);
         setIsAuthenticated(true);
         setUser(userData);
-    };
-
-    const handleLogout = () => {
-        localStorage.clear();
-        setIsAuthenticated(false);
-        setUser(null);
     };
 
     return (
@@ -79,6 +75,16 @@ const AppWithToast = () => {
                     element={
                         isAuthenticated ? (
                             <InventoryView user={user} pos={pos} />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+                <Route
+                    path="/repair"
+                    element={
+                        isAuthenticated ? (
+                            <RepairsPage user={user} pos={pos} />
                         ) : (
                             <Navigate to="/login" replace />
                         )

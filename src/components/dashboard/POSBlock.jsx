@@ -4,10 +4,12 @@ import POSView from "../pos/PosView";
 
 const POSBlock = (props) => {
     return (
-        <div className="bg-white rounded-2xl shadow-lg p-4 col-span-1 md:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Point of Sale</h2>
-            {/* Use your existing POSView UI */}
-            <POSView {...props} />
+        <div className="mt-card col-span-1 md:col-span-2">
+            <h2 className="text-xl mt-title mb-4">Point of Sale</h2>
+
+            <div className="mt-panel">
+                <POSView {...props} />
+            </div>
         </div>
     );
 };

@@ -9,6 +9,7 @@ const CheckoutDialog = ({
                             loadingWorkers = true,
                             onClose,
                             onConfirm,
+                            saving = false, // passed from Cart
                         }) => {
     const [paymentMethod, setPaymentMethod] = useState("cash");
     const [remarks, setRemarks] = useState("");
@@ -23,27 +24,27 @@ const CheckoutDialog = ({
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative animate-fadeIn">
-                <h2 className="text-2xl font-bold text-center text-amber-700 mb-6">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-theme-card rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative animate-fadeIn">
+                <h2 className="text-2xl font-bold text-center text-theme-accent mb-6">
                     Checkout
                 </h2>
 
                 {/* Summary */}
-                <div className="space-y-2 border-b border-amber-100 pb-3 mb-4">
+                <div className="space-y-2 border-b border-theme-border pb-3 mb-4">
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Subtotal</span>
-                        <span className="font-semibold text-gray-800">
+                        <span className="text-theme-text-light">Subtotal</span>
+                        <span className="font-semibold text-theme-text">
               RM {Number(subtotal).toFixed(2)}
             </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Discount</span>
-                        <span className="font-semibold text-red-600">
+                        <span className="text-theme-text-light">Discount</span>
+                        <span className="font-semibold text-theme-accent">
               - RM {Number(discount).toFixed(2)}
             </span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold text-amber-700">
+                    <div className="flex justify-between text-lg font-bold text-theme-accent">
                         <span>Total</span>
                         <span>RM {Number(total).toFixed(2)}</span>
                     </div>
@@ -51,14 +52,14 @@ const CheckoutDialog = ({
 
                 {/* Worker selection */}
                 <div className="mb-4">
-                    <label className="block text-sm text-gray-500 mb-2">Worker</label>
+                    <label className="block text-sm text-theme-text-light mb-2">Worker</label>
                     {loadingWorkers ? (
-                        <div>Loading workers...</div>
+                        <div className="text-theme-text-light">Loading workers...</div>
                     ) : (
                         <select
                             value={selectedWorker}
                             onChange={(e) => setSelectedWorker(e.target.value)}
-                            className="w-full px-2 py-1 border rounded-md"
+                            className="w-full px-2 py-1 border rounded-md border-theme-border text-theme-text"
                         >
                             <option value="">Select worker</option>
                             {workers.map((w) => (
@@ -72,7 +73,7 @@ const CheckoutDialog = ({
 
                 {/* Payment methods */}
                 <div className="mb-4">
-                    <label className="block text-sm text-gray-500 mb-2">
+                    <label className="block text-sm text-theme-text-light mb-2">
                         Payment Method
                     </label>
                     <div className="grid grid-cols-3 gap-3">
@@ -86,8 +87,8 @@ const CheckoutDialog = ({
                                 onClick={() => setPaymentMethod(method.id)}
                                 className={`flex flex-col items-center justify-center py-3 rounded-xl border transition-all duration-150 ${
                                     paymentMethod === method.id
-                                        ? "border-amber-500 bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-md"
-                                        : "border-gray-200 text-gray-700 hover:border-amber-300 hover:bg-amber-50"
+                                        ? "border-theme-accent bg-theme-accent text-white shadow-md"
+                                        : "border-theme-border text-theme-text hover:border-theme-accent hover:bg-theme-surface"
                                 }`}
                             >
                                 <span className="text-2xl">{method.emoji}</span>
@@ -99,13 +100,13 @@ const CheckoutDialog = ({
 
                 {/* Remarks */}
                 <div className="mb-4">
-                    <label className="block text-sm text-gray-500 mb-2">
+                    <label className="block text-sm text-theme-text-light mb-2">
                         Remarks (optional)
                     </label>
                     <textarea
                         value={remarks}
                         onChange={(e) => setRemarks(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-amber-400"
+                        className="w-full border border-theme-border rounded-md p-2 text-sm text-theme-text focus:ring-1 focus:ring-theme-accent"
                         placeholder="Any note about this transaction..."
                     />
                 </div>
@@ -114,15 +115,21 @@ const CheckoutDialog = ({
                 <div className="flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                        className="px-4 py-2 rounded-lg bg-theme-surface-light text-theme-text hover:bg-theme-surface transition"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:opacity-90 transition"
+                        disabled={saving}
+                        className="
+                            flex-1 py-2 rounded-lg text-white font-semibold
+                            bg-[var(--mt-accent)]
+                            hover:bg-[var(--mt-header-hover)]
+                            transition
+                        "
                     >
-                        Confirm Payment
+                        {saving ? "Processing..." : "Confirm Payment"}
                     </button>
                 </div>
             </div>

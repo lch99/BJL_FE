@@ -108,21 +108,12 @@ export default function InventoryForm({ visible, onClose, onSubmit, initialData 
         e.preventDefault();
 
         if (category === "Phones") {
-            // Ensure model and at least one variant with a SKU
             const validVariants = variants.filter(v => v.sku && v.sku.trim() !== "");
-
             if (!model.trim() || validVariants.length === 0) {
                 alert("Please enter a model and at least one variant (with SKU).");
                 return;
             }
-
-            const payload = {
-                model: model.trim(),
-                variants: validVariants
-            };
-
-            console.log("Submitting payload:", payload); // 👈 debug
-            onSubmit(payload);
+            onSubmit({ model: model.trim(), variants: validVariants });
         } else {
             onSubmit({ ...accessory, category });
         }
@@ -132,19 +123,19 @@ export default function InventoryForm({ visible, onClose, onSubmit, initialData 
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <form
                 onSubmit={handleSubmit}
-                className="bg-white rounded-xl shadow-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-orange-400"
+                className="bg-[var(--mt-surface)] rounded-xl shadow-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-[var(--mt-accent)]"
             >
-                <h2 className="text-2xl font-bold mb-4 text-orange-600">
+                <h2 className="text-2xl font-bold mb-4 text-[var(--mt-accent)]">
                     {initialData ? "Edit Item" : "Add Item"}
                 </h2>
 
                 {/* Category Selector */}
                 <div className="mb-4 flex gap-4">
-                    <label className="font-semibold">Category:</label>
+                    <label className="font-semibold text-[var(--mt-text)]">Category:</label>
                     <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="border p-2 rounded"
+                        className="border p-2 rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]"
                     >
                         <option value="Phones">Phones</option>
                         <option value="Accessories">Accessories</option>
@@ -155,20 +146,20 @@ export default function InventoryForm({ visible, onClose, onSubmit, initialData 
                 {category === "Phones" && (
                     <>
                         <div className="mb-4">
-                            <label className="block font-medium mb-1">Phone Model</label>
+                            <label className="block font-medium mb-1 text-[var(--mt-text)]">Phone Model</label>
                             <input
                                 type="text"
                                 value={model}
                                 onChange={(e) => setModel(toTitleCase(e.target.value))}
                                 placeholder="e.g. Samsung S25"
-                                className="border p-2 w-full rounded"
+                                className="border p-2 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]"
                                 required
                             />
                         </div>
 
                         <div className="overflow-x-auto mb-4">
-                            <table className="min-w-full border">
-                                <thead className="bg-orange-100 text-orange-800">
+                            <table className="min-w-full border border-[var(--mt-surface-light)]">
+                                <thead className="bg-[var(--mt-accent-light)] text-[var(--mt-accent)]">
                                 <tr>
                                     <th className="p-2 border">SKU</th>
                                     <th className="p-2 border">Color</th>
@@ -185,31 +176,31 @@ export default function InventoryForm({ visible, onClose, onSubmit, initialData 
                                 </thead>
                                 <tbody>
                                 {variants.map((v, i) => (
-                                    <tr key={i} className="hover:bg-orange-50">
-                                        <td className="p-1 border"><input value={v.sku} onChange={(e) => handleVariantChange(i, "sku", e.target.value)} className="border p-1 w-full rounded" /></td>
-                                        <td className="p-1 border"><input value={v.color} onChange={(e) => handleVariantChange(i, "color", e.target.value)} className="border p-1 w-full rounded" /></td>
-                                        <td className="p-1 border"><input type="number" value={v.ram} onChange={(e) => handleVariantChange(i, "ram", e.target.value)} className="border p-1 w-full rounded" /></td>
-                                        <td className="p-1 border"><input type="number" value={v.storage} onChange={(e) => handleVariantChange(i, "storage", e.target.value)} className="border p-1 w-full rounded" /></td>
+                                    <tr key={i} className="hover:bg-[var(--mt-surface-light)]">
+                                        <td className="p-1 border"><input value={v.sku} onChange={(e) => handleVariantChange(i, "sku", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
+                                        <td className="p-1 border"><input value={v.color} onChange={(e) => handleVariantChange(i, "color", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
+                                        <td className="p-1 border"><input type="number" value={v.ram} onChange={(e) => handleVariantChange(i, "ram", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
+                                        <td className="p-1 border"><input type="number" value={v.storage} onChange={(e) => handleVariantChange(i, "storage", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
                                         <td className="p-1 border">
-                                            <select value={v.condition} onChange={(e) => handleVariantChange(i, "condition", e.target.value)} className="border p-1 w-full rounded">
+                                            <select value={v.condition} onChange={(e) => handleVariantChange(i, "condition", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]">
                                                 <option value="new">New</option>
                                                 <option value="used">Used</option>
                                                 <option value="refurbished">Refurbished</option>
                                             </select>
                                         </td>
-                                        <td className="p-1 border"><input type="number" value={v.warranty_months} onChange={(e) => handleVariantChange(i, "warranty_months", e.target.value)} className="border p-1 w-full rounded" /></td>
-                                        <td className="p-1 border"><input type="number" value={v.stock} onChange={(e) => handleVariantChange(i, "stock", e.target.value)} className="border p-1 w-full rounded" /></td>
-                                        <td className="p-1 border"><input type="number" value={v.price} onChange={(e) => handleVariantChange(i, "price", e.target.value)} className="border p-1 w-full rounded" /></td>
-                                        <td className="p-1 border"><input type="number" value={v.cost} onChange={(e) => handleVariantChange(i, "cost", e.target.value)} className="border p-1 w-full rounded" /></td>
-                                        <td className="p-1 border"><input value={v.imei} onChange={(e) => handleVariantChange(i, "imei", e.target.value)} className="border p-1 w-full rounded" /></td>
+                                        <td className="p-1 border"><input type="number" value={v.warranty_months} onChange={(e) => handleVariantChange(i, "warranty_months", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
+                                        <td className="p-1 border"><input type="number" value={v.stock} onChange={(e) => handleVariantChange(i, "stock", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
+                                        <td className="p-1 border"><input type="number" value={v.price} onChange={(e) => handleVariantChange(i, "price", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
+                                        <td className="p-1 border"><input type="number" value={v.cost} onChange={(e) => handleVariantChange(i, "cost", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
+                                        <td className="p-1 border"><input value={v.imei} onChange={(e) => handleVariantChange(i, "imei", e.target.value)} className="border p-1 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]" /></td>
                                         <td className="p-1 border text-center">
-                                            <button type="button" onClick={() => removeVariantRow(i)} className="text-red-500 hover:underline">Delete</button>
+                                            <button type="button" onClick={() => removeVariantRow(i)} className="text-[var(--mt-red)] hover:underline">Delete</button>
                                         </td>
                                     </tr>
                                 ))}
                                 </tbody>
                             </table>
-                            <button type="button" onClick={addVariantRow} className="mt-2 px-4 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition">
+                            <button type="button" onClick={addVariantRow} className="mt-2 px-4 py-1 bg-[var(--mt-accent)] text-white rounded hover:opacity-90 transition">
                                 Add Variant
                             </button>
                         </div>
@@ -219,37 +210,23 @@ export default function InventoryForm({ visible, onClose, onSubmit, initialData 
                 {/* Accessories Section */}
                 {category === "Accessories" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block mb-1 font-medium">Name</label>
-                            <input value={accessory.name} onChange={(e) => handleAccessoryChange("name", e.target.value)} className="border p-2 w-full rounded" />
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">Brand</label>
-                            <input value={accessory.brand} onChange={(e) => handleAccessoryChange("brand", e.target.value)} className="border p-2 w-full rounded" />
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">SKU</label>
-                            <input value={accessory.sku} onChange={(e) => handleAccessoryChange("sku", e.target.value)} className="border p-2 w-full rounded" />
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">Stock</label>
-                            <input type="number" value={accessory.stock} onChange={(e) => handleAccessoryChange("stock", parseFloat(e.target.value)||0)} className="border p-2 w-full rounded" />
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">Price</label>
-                            <input type="number" value={accessory.price} onChange={(e) => handleAccessoryChange("price", parseFloat(e.target.value)||0)} className="border p-2 w-full rounded" />
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">Cost</label>
-                            <input type="number" value={accessory.cost} onChange={(e) => handleAccessoryChange("cost", parseFloat(e.target.value)||0)} className="border p-2 w-full rounded" />
-                        </div>
+                        {["name","brand","sku","stock","price","cost"].map(field => (
+                            <div key={field}>
+                                <label className="block mb-1 font-medium text-[var(--mt-text)]">{toTitleCase(field)}</label>
+                                <input
+                                    value={accessory[field]}
+                                    onChange={(e) => handleAccessoryChange(field, field==="stock"||field==="price"||field==="cost" ? parseFloat(e.target.value)||0 : e.target.value)}
+                                    className="border p-2 w-full rounded bg-[var(--mt-surface-light)] text-[var(--mt-text)]"
+                                />
+                            </div>
+                        ))}
                     </div>
                 )}
 
                 {/* Buttons */}
                 <div className="flex justify-end gap-2 mt-4">
-                    <button type="button" onClick={onClose} className="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
-                    <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition">
+                    <button type="button" onClick={onClose} className="px-4 py-2 border rounded hover:bg-[var(--mt-surface-light)] text-[var(--mt-text)]">Cancel</button>
+                    <button type="submit" className="px-4 py-2 bg-[var(--mt-accent)] text-white rounded hover:opacity-90 transition">
                         {initialData ? "Update" : "Add"}
                     </button>
                 </div>

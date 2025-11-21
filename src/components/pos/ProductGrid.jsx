@@ -1,15 +1,7 @@
-// src/components/pos/ProductGrid.jsx
 import React, { useMemo } from "react";
 import ProductCard from "./ProductCard";
 
-/**
- * products: array of raw product objects (from your APIs)
- * activeTab: "phones" or "accessories" (used to map brand/name fields)
- * searchTerm: string
- * onAddToCart: function
- */
 const ProductGrid = ({ products = [], activeTab = "phones", searchTerm = "", onAddToCart }) => {
-    // Normalize products into display items
     const normalized = useMemo(() => {
         return (products || []).map((p) => {
             if (activeTab === "phones") {
@@ -24,7 +16,6 @@ const ProductGrid = ({ products = [], activeTab = "phones", searchTerm = "", onA
                     raw: p,
                 };
             } else {
-                // accessory
                 return {
                     id: p.id,
                     brand: p.brand || "Unknown",
@@ -48,7 +39,6 @@ const ProductGrid = ({ products = [], activeTab = "phones", searchTerm = "", onA
         );
     }, [normalized, searchTerm]);
 
-    // group by brand
     const grouped = useMemo(() => {
         return filtered.reduce((acc, item) => {
             const brand = item.brand || "Others";
@@ -61,14 +51,19 @@ const ProductGrid = ({ products = [], activeTab = "phones", searchTerm = "", onA
     return (
         <div className="overflow-y-auto" style={{ maxHeight: "68vh" }}>
             {Object.keys(grouped).length === 0 ? (
-                <div className="py-16 text-center text-gray-400">No products found.</div>
+                <div className="py-16 text-center text-theme-text-light/70">No products found.</div>
             ) : (
                 Object.entries(grouped).map(([brand, items]) => (
                     <div key={brand} className="mb-6">
-                        <h3 className="text-lg font-semibold text-amber-700 mb-3">{brand}</h3>
+                        <h3 className="text-lg font-semibold text-theme-accent mb-3">{brand}</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                             {items.map((it) => (
-                                <ProductCard key={it.id} item={it} onAdd={() => onAddToCart(it.raw)} />
+                                <ProductCard
+                                    key={it.id}
+                                    item={it}
+                                    onAdd={() => onAddToCart(it.raw)}
+                                    className="bg-theme-card border border-theme-border rounded-xl shadow hover:bg-theme-surface-light transition-all"
+                                />
                             ))}
                         </div>
                     </div>
